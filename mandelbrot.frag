@@ -15,13 +15,19 @@ vec3 escape(vec2 c)
 
     while (true)
     {
+        if (iteration == u_max_iterations)
+        {
+            return vec3(0.0, z.x, z.y);
+        }
+
         if ((length(z) > 4) || (iteration > u_max_iterations))
         {
             return vec3(float(iteration), z.x, z.y);
         }
 
         float z_real_temp = z.x * z.x - z.y * z.y + c.x;
-        z.y = 2.0 * z.x * z.y + c.y; 
+        //z.y = 2.0 * z.x * z.y + c.y; 
+        z.y = abs(2*z.x*z.y) + c.y;
         z.x = z_real_temp; 
 
         iteration = iteration + 1;
@@ -33,7 +39,7 @@ vec3 escape(vec2 c)
 void main()
 {
     vec2 normalized_coords = (gl_FragCoord.xy / u_resolution) * 2.0 - 1.0;
-    vec2 c = u_center + normalized_coords * u_scale;
+    vec2 c = -(u_center + normalized_coords * u_scale);
 
     vec3 escape_output = escape(c);
 

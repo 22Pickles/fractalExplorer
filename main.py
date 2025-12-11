@@ -71,7 +71,7 @@ def main():
     center_x = -0.5
     center_y = 0.0
     scale = 1.5
-    max_iterations = 100
+    max_iterations = 1000
     
 
     u_center_loc = glGetUniformLocation(program, "u_center")
