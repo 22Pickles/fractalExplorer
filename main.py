@@ -3,6 +3,51 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
 
+def load_palette(program):
+
+    PALETTE_SIZE = 1024
+
+    palette = np.zeros((PALETTE_SIZE, 4), dtype=np.uint8)
+    for i in range(PALETTE_SIZE):
+        t = i / (PALETTE_SIZE - 1)
+
+        r = 0.5 + 0.5*np.sin(2*np.pi*(t))
+        g = 0.5 + 0.5*np.sin(2*np.pi*(t ))
+        b = 0.5 + 0.5*np.sin(2*np.pi*(t ))
+
+        palette[i] = [int(r*255), int(g*255), int(b*255), 255]
+
+
+    def create_palette_texture(palette_array):
+        tex_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_1D, tex_id)
+
+        glTexImage1D(
+            GL_TEXTURE_1D,
+            0,
+            GL_RGBA8,
+            palette_array.shape[0],
+            0,
+            GL_RGBA,
+            GL_UNSIGNED_BYTE,
+            palette_array
+        )
+
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+
+        glBindTexture(GL_TEXTURE_1D, 0)
+        return tex_id
+
+    palette_tex = create_palette_texture(palette)
+
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_1D, palette_tex)
+
+    glUseProgram(program)
+    glUniform1i(glGetUniformLocation(program, "u_palette"), 0)
+    glUniform1f(glGetUniformLocation(program, "u_palette_size"), PALETTE_SIZE)
 
 def load_shader(shader_file, shader_type):
     with open(shader_file, 'r') as f:
@@ -37,10 +82,12 @@ def create_program(vertex_file, fragment_file):
 def main():
     pygame.init()
     SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
-    pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.OPENGL | pygame.DOUBLEBUF)
+    pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.OPENGL | pygame.DOUBLEBUF, pygame.RESIZABLE)
     pygame.display.set_caption("PyOpenGL Fractal Viewer")
 
+    clock = pygame.time.Clock()
     program = create_program("mandelbrot.vert", "mandelbrot.frag")
+    load_palette(program)
     glUseProgram(program)
     glClearColor(0.1, 0.1, 0.1, 1.0)
     
@@ -91,9 +138,13 @@ def main():
 
         mouse_rel = pygame.mouse.get_rel()
 
+        normalized_coords = (center_x / u_resolution_loc) * 2.0 - 1.0
+        c = -(u_center_loc + normalized_coords * u_scale_loc)
+
         if pygame.mouse.get_pressed()[0]:
-            center_x += -mouse_rel[0] / 500.0
-            center_y +=  mouse_rel[1] / 500.0
+            center_x += -mouse_rel[0] / 500 * scale**scale**scale
+            center_y +=  mouse_rel[1] / 500 * scale**scale**scale
+
         
 
         keys = pygame.key.get_pressed()
@@ -114,16 +165,17 @@ def main():
         size = (move[0]**2 + move[1]**2)**0.5
         
         if size != 0:
-            center_x += move[0]*scale/1000/size
-            center_y += move[1]*scale/1000/size
+            center_x += move[0]/scale*0.005*size
+            center_y += move[1]/scale*0.005*size
 
 
         if keys[pygame.K_z]:
-            scale += scale/1000
+            scale += scale/100
         if keys[pygame.K_x]:
-            scale -= scale/1000
+            scale -= scale/100
 
-        max_iterations = int(1000 + 100**scale)
+        max_iterations = 1000 + int((1/scale)**1.15)
+        print(max_iterations)
 
 
         
@@ -139,6 +191,7 @@ def main():
         glBindVertexArray(0)
         
         pygame.display.flip()
+        clock.tick(30)
 
 
     glDeleteProgram(program)

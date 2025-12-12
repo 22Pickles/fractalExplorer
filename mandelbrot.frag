@@ -1,66 +1,65 @@
 #version 330 core
-
 out vec4 FragColor;
 
 uniform vec2 u_center;
 uniform float u_scale;
 uniform int u_max_iterations;
 uniform vec2 u_resolution;
+uniform sampler1D u_palette;
+uniform float u_palette_size;
 
+const float LOG2 = 0.6931471805599453;
 
 vec3 escape(vec2 c)
 {
-    vec2 z = vec2(0.0, 0.0);
-    int iteration = 0;
+    vec2 z = vec2(0.0);
 
-    while (true)
+    for (int i = 0; i < u_max_iterations; ++i)
     {
-        if (iteration == u_max_iterations)
-        {
-            return vec3(0.0, z.x, z.y);
-        }
+        if (dot(z, z) > 16.0)
+            return vec3(float(i), z);
 
-        if ((length(z) > 4) || (iteration > u_max_iterations))
-        {
-            return vec3(float(iteration), z.x, z.y);
-        }
+        float x = z.x;
+        float y = z.y;
 
-        float z_real_temp = z.x * z.x - z.y * z.y + c.x;
-        //z.y = 2.0 * z.x * z.y + c.y; 
-        z.y = abs(2*z.x*z.y) + c.y;
-        z.x = z_real_temp; 
+        float x2 = x*x;
+        float y2 = y*y;
 
-        iteration = iteration + 1;
+        z = vec2(
+            x2 - y2 + c.x,
+            abs(2.0 * x * y) + c.y
+        );
     }
-
-    return vec3(0.0, z.x, z.y);
+    return vec3(0.0, z);
 }
 
 void main()
 {
-    vec2 normalized_coords = (gl_FragCoord.xy / u_resolution) * 2.0 - 1.0;
-    vec2 c = -(u_center + normalized_coords * u_scale);
+    vec2 uv = gl_FragCoord.xy / u_resolution;
+    vec2 normalized = (uv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0) * 2.0;
+    vec2 c = -(u_center + normalized * u_scale);
 
-    vec3 escape_output = escape(c);
+    vec3 result = escape(c);
+    float iter = result.x;
+    vec2 z = result.yz;
 
-    float iteration_count = escape_output.x;
-    vec2 z = escape_output.yz;
-
-
-    if (iteration_count == 0.0) 
+    if (iter == 0.0)
     {
-        FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        FragColor = vec4(0,0,0,1);
+        return;
     }
-    else 
-    {
-        float log_z_len = log(length(z));
-        float nu = log(log_z_len / log(2.0)) / log(2.0);
-        float color_value = iteration_count + 1.0 - nu; 
-        
-        float r = 0.5 * sin(0.1 * color_value) + 0.5;
-        float g = 0.5 * sin(0.15 * color_value) + 0.5;
-        float b = 0.5 * sin(0.2 * color_value) + 0.5;
 
-        FragColor = vec4(r, g, b, 1.0);
-    }
+    float z2 = dot(z,z);
+    float log_zn = 0.5 * log(z2);
+    float nu = log(log_zn / LOG2) / LOG2;
+
+    float smoothIter = iter + 1.0 - nu;
+    float cycles = 6.0;   // number of palette repeats
+    float index = smoothIter * cycles / float(u_max_iterations);
+    index = fract(index);
+
+    vec4 color = texture(u_palette, index);
+    FragColor = color;
+
+    FragColor = color;
 }
