@@ -27,8 +27,8 @@ vec3 escape(vec2 c)
 
         z = vec2(
             x2 - y2 + c.x,
-            abs(2.0 * x * y) + c.y
-            //2*x*y+c.y
+            //abs(2.0 * x * y) + c.y
+            2*x*y+c.y
         );
     }
     return vec3(0.0, z);
@@ -38,7 +38,7 @@ void main()
 {
     vec2 uv = gl_FragCoord.xy / u_resolution;
     vec2 normalized = (uv - 0.5) * vec2(u_resolution.x / u_resolution.y, 1.0) * 2.0;
-    vec2 c = -(u_center + normalized * u_scale);
+    vec2 c = (u_center + normalized * u_scale);
 
     vec3 result = escape(c);
     float iter = result.x;
@@ -55,7 +55,7 @@ void main()
     float nu = log(log_zn / LOG2) / LOG2;
 
     float smoothIter = iter + 1.0 - nu;
-    float cycles = 12.0;
+    float cycles = 1.0;
     float index = smoothIter * cycles / float(u_max_iterations);
     index = fract(index);
 

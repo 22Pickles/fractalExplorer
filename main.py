@@ -3,6 +3,18 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
 
+import mpmath as mp
+
+mp.mp.dps = 2000
+
+def mandelbrot_reference_orbit(C, max_iter):
+    Z = mp.mpc(0,0)
+    orbit = []
+    for i in range(max_iter):
+        Z = Z*Z + C
+        orbit.append((float(Z.real), float(Z.imag)))  
+    return orbit
+
 def load_palette(program):
 
     PALETTE_SIZE = 1024
@@ -24,12 +36,21 @@ def load_palette(program):
             255
         ]
 
+    palette_tex = create_palette_texture(palette)
 
-    def create_palette_texture(palette_array):
-        tex_id = glGenTextures(1)
-        glBindTexture(GL_TEXTURE_1D, tex_id)
+    glActiveTexture(GL_TEXTURE0)
+    glBindTexture(GL_TEXTURE_1D, palette_tex)
 
-        glTexImage1D(
+    glUseProgram(program)
+    glUniform1i(glGetUniformLocation(program, "u_palette"), 0)
+    glUniform1f(glGetUniformLocation(program, "u_palette_size"), PALETTE_SIZE)
+
+
+def create_palette_texture(palette_array):
+    tex_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_1D, tex_id)
+
+    glTexImage1D(
             GL_TEXTURE_1D,
             0,
             GL_RGBA8,
@@ -40,21 +61,13 @@ def load_palette(program):
             palette_array
         )
 
-        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT)
 
-        glBindTexture(GL_TEXTURE_1D, 0)
-        return tex_id
+    glBindTexture(GL_TEXTURE_1D, 0)
+    return tex_id
 
-    palette_tex = create_palette_texture(palette)
-
-    glActiveTexture(GL_TEXTURE0)
-    glBindTexture(GL_TEXTURE_1D, palette_tex)
-
-    glUseProgram(program)
-    glUniform1i(glGetUniformLocation(program, "u_palette"), 0)
-    glUniform1f(glGetUniformLocation(program, "u_palette_size"), PALETTE_SIZE)
 
 def load_shader(shader_file, shader_type):
     with open(shader_file, 'r') as f:
@@ -158,6 +171,9 @@ def main():
         
 
         keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_w]:
+            break
 
         move = [0,0]
 
