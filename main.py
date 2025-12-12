@@ -36,7 +36,7 @@ def create_program(vertex_file, fragment_file):
 
 def main():
     pygame.init()
-    SCREEN_WIDTH, SCREEN_HEIGHT = 1500, 1000
+    SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
     pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.OPENGL | pygame.DOUBLEBUF)
     pygame.display.set_caption("PyOpenGL Fractal Viewer")
 
@@ -71,7 +71,7 @@ def main():
     center_x = -0.5
     center_y = 0.0
     scale = 1.5
-    max_iterations = 1000
+    max_iterations = 100
     
 
     u_center_loc = glGetUniformLocation(program, "u_center")
@@ -87,25 +87,44 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                zoom_factor = 1.2
-                if event.button == 4:
-                    scale /= zoom_factor
-                elif event.button == 5: 
-                    scale *= zoom_factor
+        
 
-            if event.type == pygame.KEYDOWN:
-                move_amount = scale / 5.0 
-                if event.key == pygame.K_LEFT:
-                    center_x -= move_amount
-                elif event.key == pygame.K_RIGHT:
-                    center_x += move_amount
-                elif event.key == pygame.K_UP:
-                    center_y += move_amount
-                elif event.key == pygame.K_DOWN:
-                    center_y -= move_amount
-            
+        mouse_rel = pygame.mouse.get_rel()
+
+        if pygame.mouse.get_pressed()[0]:
+            center_x += -mouse_rel[0] / 500.0
+            center_y +=  mouse_rel[1] / 500.0
+        
+
+        keys = pygame.key.get_pressed()
+
+
+
+        move = [0,0]
+
+        if keys[pygame.K_LEFT]:
+            move[0] -= 1
+        if keys[pygame.K_RIGHT]:
+            move[0] += 1
+        if keys[pygame.K_UP]:
+            move[1] += 1
+        if keys[pygame.K_DOWN]:
+            move[1] -= 1
+
+        size = (move[0]**2 + move[1]**2)**0.5
+        
+        if size != 0:
+            center_x += move[0]*scale/1000/size
+            center_y += move[1]*scale/1000/size
+
+
+        if keys[pygame.K_z]:
+            scale += scale/1000
+        if keys[pygame.K_x]:
+            scale -= scale/1000
+
+        max_iterations = int(1000 + 100**scale)
+
 
         
         glUniform2f(u_center_loc, center_x, center_y)
