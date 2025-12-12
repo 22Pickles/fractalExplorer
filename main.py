@@ -6,16 +6,23 @@ import numpy as np
 def load_palette(program):
 
     PALETTE_SIZE = 1024
-
     palette = np.zeros((PALETTE_SIZE, 4), dtype=np.uint8)
+
     for i in range(PALETTE_SIZE):
         t = i / (PALETTE_SIZE - 1)
+        t2 = t * t
+        t3 = t2 * t
 
-        r = 0.5 + 0.5*np.sin(2*np.pi*(t))
-        g = 0.5 + 0.5*np.sin(2*np.pi*(t ))
-        b = 0.5 + 0.5*np.sin(2*np.pi*(t ))
+        r = 9*(1-t)*t3
+        g = 15*((1-t)**2)*t2
+        b = 8.5*((1-t)**3)*t
 
-        palette[i] = [int(r*255), int(g*255), int(b*255), 255]
+        palette[i] = [
+            int(np.clip(r*255, 0, 255)),
+            int(np.clip(g*255, 0, 255)),
+            int(np.clip(b*255, 0, 255)),
+            255
+        ]
 
 
     def create_palette_texture(palette_array):
@@ -82,7 +89,10 @@ def create_program(vertex_file, fragment_file):
 def main():
     pygame.init()
     SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
-    pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.OPENGL | pygame.DOUBLEBUF, pygame.RESIZABLE)
+    display = pygame.display.set_mode(
+    (SCREEN_WIDTH, SCREEN_HEIGHT),
+    pygame.OPENGL | pygame.DOUBLEBUF | pygame.OPENGLBLIT | pygame.RESIZABLE
+)
     pygame.display.set_caption("PyOpenGL Fractal Viewer")
 
     clock = pygame.time.Clock()
@@ -149,8 +159,6 @@ def main():
 
         keys = pygame.key.get_pressed()
 
-
-
         move = [0,0]
 
         if keys[pygame.K_LEFT]:
@@ -165,18 +173,20 @@ def main():
         size = (move[0]**2 + move[1]**2)**0.5
         
         if size != 0:
-            center_x += move[0]/scale*0.005*size
-            center_y += move[1]/scale*0.005*size
+            center_x += move[0]/(1/scale)*0.05*size
+            center_y += move[1]/(1/scale)*0.05*size
 
 
         if keys[pygame.K_z]:
             scale += scale/100
         if keys[pygame.K_x]:
             scale -= scale/100
-
-        max_iterations = 1000 + int((1/scale)**1.15)
-        print(max_iterations)
-
+        if keys[pygame.K_c]:
+            max_iterations += int(max(1,(max_iterations**1.01)/200))
+        if keys[pygame.K_v]:
+            max_iterations -= int(max(1, ((max_iterations**1.01))/200))
+        if max_iterations < 0:
+            max_iterations = 0
 
         
         glUniform2f(u_center_loc, center_x, center_y)
@@ -189,7 +199,7 @@ def main():
         glBindVertexArray(VAO)
         glDrawArrays(GL_TRIANGLES, 0, 6)
         glBindVertexArray(0)
-        
+
         pygame.display.flip()
         clock.tick(30)
 
