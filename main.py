@@ -7,13 +7,6 @@ import mpmath as mp
 
 mp.mp.dps = 2000
 
-def mandelbrot_reference_orbit(C, max_iter):
-    Z = mp.mpc(0,0)
-    orbit = []
-    for i in range(max_iter):
-        Z = Z*Z + C
-        orbit.append((float(Z.real), float(Z.imag)))  
-    return orbit
 
 def load_palette(program):
 
@@ -204,6 +197,7 @@ def main():
         if max_iterations < 0:
             max_iterations = 0
 
+
         
         glUniform2f(u_center_loc, center_x, center_y)
         glUniform1f(u_scale_loc, scale)
@@ -218,6 +212,7 @@ def main():
 
         pygame.display.flip()
         clock.tick(30)
+        print(clock.get_fps())
 
 
     glDeleteProgram(program)
