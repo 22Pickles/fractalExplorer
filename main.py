@@ -3,9 +3,6 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
 
-import mpmath as mp
-
-mp.mp.dps = 2000
 
 
 def load_palette(program):
@@ -134,7 +131,8 @@ def main():
     center_x = -0.5
     center_y = 0.0
     scale = 1.5
-    max_iterations = 100
+    max_iterations = 20
+    
     
 
     u_center_loc = glGetUniformLocation(program, "u_center")
@@ -144,7 +142,7 @@ def main():
 
   
     glUniform2f(u_resolution_loc, float(SCREEN_WIDTH), float(SCREEN_HEIGHT))
-
+    path = False
     running = True
     while running:
         for event in pygame.event.get():
@@ -166,7 +164,17 @@ def main():
         keys = pygame.key.get_pressed()
 
         if keys[pygame.K_w]:
-            break
+            path = True
+        elif keys[pygame.K_q]:
+            path = False
+        
+        if path:
+            center_x = -0.761574
+            center_y = -0.0847596
+
+            max_iterations += int(max(1,(max_iterations**1.01)/400))
+            scale -= scale/100
+
 
         move = [0,0]
 
@@ -212,7 +220,6 @@ def main():
 
         pygame.display.flip()
         clock.tick(30)
-        print(clock.get_fps())
 
 
     glDeleteProgram(program)

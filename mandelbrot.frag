@@ -82,7 +82,7 @@ void main()
     float z2 = dot(z, z);
     float nu = log(log(z2) / 2.0) / LOG2; // 2.0 is log(sqrt(bailout)) roughly
     float smoothIter = iter + 1.0 - nu;
-    float index = fract(smoothIter * 0.01 + 0.5); // Slow down the cycle
+    float index = fract(smoothIter * 0.01 + 0.5); 
     vec4 baseColor = texture(u_palette, index);
 
     float edgeFactor = clamp(dist / pixel_size, 0.0, 1.0);
