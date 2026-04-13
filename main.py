@@ -2,7 +2,21 @@ import pygame
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 import numpy as np
+import ctypes
 
+def draw_text(x, y, text, font, color=(255, 255, 255)):
+    """ Renders text to a surface and blits it to the OpenGL window. """
+    text_surface = font.render(text, True, color)
+    text_data = pygame.image.tostring(text_surface, "RGBA", True)
+
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
+    
+    # Position the raster for the text
+    glWindowPos2d(x, y)
+    
+    # Draw the pixels
+    glDrawPixels(text_surface.get_width(), text_surface.get_height(), 
+                 GL_RGBA, GL_UNSIGNED_BYTE, text_data)
 
 def load_palette(program):
     """
@@ -122,6 +136,8 @@ def main():
     )
     pygame.display.set_caption("PyOpenGL Fractal Viewer")
 
+    font = pygame.font.SysFont('Consolas', 18)
+
     clock = pygame.time.Clock()
     
     # Initialize shaders and color palette
@@ -170,6 +186,9 @@ def main():
     # Send the screen resolution to the shader once
     glUniform2f(u_resolution_loc, float(SCREEN_WIDTH), float(SCREEN_HEIGHT))
     
+    glEnable(GL_BLEND)
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+
     path = False
     running = True
     
@@ -180,6 +199,9 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+    
+        # Re-bind the shader for the fractal render
+        glUseProgram(program)
 
         # Continuously poll relative mouse movement to prevent cursor drifting
         mouse_rel = pygame.mouse.get_rel()
@@ -192,6 +214,11 @@ def main():
 
         # 2. Keyboard Input Processing
         keys = pygame.key.get_pressed()
+
+        # This list comprehension finds all keys that are True and gets their names
+        pressed_keys = [pygame.key.name(k).upper() for k in range(len(keys)) if keys[k]]
+        # Join them into a single string, e.g., "LEFT, Z, C"
+        keys_string = ", ".join(pressed_keys) if pressed_keys else "None"
 
         # Toggle automated exploration path
         if keys[pygame.K_w]:
@@ -247,6 +274,21 @@ def main():
         glBindVertexArray(VAO)
         glDrawArrays(GL_TRIANGLES, 0, 6)
         glBindVertexArray(0)
+
+        # Unbind shader for draw_text
+        glUseProgram(0)
+
+        ui_lines = [
+            f"Pos: {center_x:.6f}, {center_y:.6f}",
+            f"Zoom: {1/scale:.2e}",
+            f"Iter: {max_iterations}",
+            f"Auto-Path: {'ON' if path else 'OFF'} (W/Q)"
+            f"Input Keys: {keys_string}"
+        ]
+
+        for i, line in enumerate(ui_lines):
+            # Render from top down (SCREEN_HEIGHT - offset)
+            draw_text(10, SCREEN_HEIGHT - 30 - (i * 25), line, font)
 
         pygame.display.flip()
         clock.tick(30) # Limit frame rate to 30 FPS
