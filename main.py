@@ -1,3 +1,6 @@
+# Code by [Removed]
+# Comments made with help from Google Gemini
+
 import pygame
 from OpenGL.GL import *
 from OpenGL.GLUT import *
@@ -282,7 +285,7 @@ def main():
             f"Pos: {center_x:.6f}, {center_y:.6f}",
             f"Zoom: {1/scale:.2e}",
             f"Iter: {max_iterations}",
-            f"Auto-Path: {'ON' if path else 'OFF'} (W/Q)"
+            f"Auto-Path: {'ON' if path else 'OFF'} (W/Q)",
             f"Input Keys: {keys_string}"
         ]
 
